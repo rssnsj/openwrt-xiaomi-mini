@@ -85,18 +85,18 @@ Index: target/linux/ramips/dts/Xiaomi-Mini.dts
 +				};
 +
 +				partition@fd0000 {
-+					label = "hwf_config";
++					label = "crash";
 +					reg = <0xfd0000 0x10000>;
 +				};
 +
-+				bdinfo: partition@fe0000 {
-+					label = "bdinfo";
++				partition@fe0000 {
++					label = "reserved";
 +					reg = <0xfe0000 0x10000>;
 +					read-only;
 +				};
 +
 +				partition@ff0000 {
-+					label = "backup";
++					label = "Bdata";
 +					reg = <0xff0000 0x10000>;
 +				};
 +			};
@@ -142,7 +142,7 @@ Index: target/linux/ramips/dts/Xiaomi-Mini.dts
 +		pinctrl-names = "default";
 +		pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
 +
-+		ralink,port-map = "wllll";
++		ralink,port-map = "lllwl";
 +
 +		port@4 {
 +			status = "okay";
@@ -186,19 +186,19 @@ Index: target/linux/ramips/dts/Xiaomi-Mini.dts
 +	gpio-leds {
 +		compatible = "gpio-leds";
 +		system {
-+			label = "Xiaomi:green:system";
++			label = "xiaomi:green:system";
 +			gpios = <&gpio0 9 1>;
 +		};
 +		internet {
-+			label = "Xiaomi:green:internet";
++			label = "xiaomi:green:internet";
 +			gpios = <&gpio0 11 1>;
 +		};
 +		wlan2p4 {
-+			label = "Xiaomi:green:wlan-2p4";
++			label = "xiaomi:green:wlan-2p4";
 +			gpios = <&gpio3 0 1>;
 +		};
 +		wlan5p {
-+			label = "Xiaomi:green:wlan-5p";
++			label = "xiaomi:green:wlan-5p";
 +			gpios = <&gpio0 7 1>;
 +		};
 +	};
@@ -274,9 +274,9 @@ Index: target/linux/ramips/base-files/etc/uci-defaults/01_leds
  		set_wifi_led "wr8305rt:wifi"
  		;;
 +	xiaomi-mini)
-+		ucidef_set_led_default "system" "system" "Xiaomi:green:system" "1"
-+		ucidef_set_led_netdev "internet" "internet" "Xiaomi:green:internet" "eth0.2"
-+		set_wifi_led "Xiaomi:green:wlan-2p4"
++		ucidef_set_led_default "system" "system" "xiaomi:green:system" "1"
++		ucidef_set_led_netdev "internet" "internet" "xiaomi:green:internet" "eth0.2"
++		set_wifi_led "xiaomi:green:wlan-2p4"
 +		;;
  	y1 |\
  	y1s)
@@ -285,14 +285,14 @@ Index: target/linux/ramips/base-files/etc/uci-defaults/02_network
 ===================================================================
 --- target/linux/ramips/base-files/etc/uci-defaults/02_network	(revision 43770)
 +++ target/linux/ramips/base-files/etc/uci-defaults/02_network	(working copy)
-@@ -184,6 +184,7 @@
+@@ -96,6 +96,7 @@
+ 		ucidef_add_switch_vlan "switch0" "2" "4 9t"
  		;;
  
- 	y1 |\
-+	xiaomi-mini |\
- 	y1s)
- 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
- 		ucidef_add_switch "switch0" "1" "1"
++	xiaomi-mini | \
+ 	3g-6200n | \
+ 	dir-610-a1 | \
+ 	dir-300-b7 | \
 @@ -257,6 +258,7 @@
  	psr-680w |\
  	sl-r7205 |\
@@ -310,7 +310,7 @@ Index: target/linux/ramips/base-files/etc/diag.sh
  		status_led="na930:blue:power"
  		;;
 +	xiaomi-mini)
-+		status_led="Xiaomi:green:system"
++		status_led="xiaomi:green:system"
 +		;;
  	y1 | \
  	y1s)
@@ -330,47 +330,3 @@ Index: target/linux/ramips/patches-3.10/0402-mtd-gd25q.patch
 + 
 + 	/* Catalyst / On Semiconductor -- non-JEDEC */
 + 	{ "cat25c11", CAT25_INFO(  16, 8, 16, 1) },
-Index: target/linux/ramips/patches-3.10/0117-NET-add-of_get_mac_address_mtd.patch
-===================================================================
---- target/linux/ramips/patches-3.10/0117-NET-add-of_get_mac_address_mtd.patch	(revision 43770)
-+++ target/linux/ramips/patches-3.10/0117-NET-add-of_get_mac_address_mtd.patch	(working copy)
-@@ -24,7 +24,7 @@
-  
-  /**
-   * It maps 'enum phy_interface_t' found in include/linux/phy.h
--@@ -92,3 +93,39 @@ const void *of_get_mac_address(struct de
-+@@ -92,3 +93,54 @@ const void *of_get_mac_address(struct de
-  	return NULL;
-  }
-  EXPORT_SYMBOL(of_get_mac_address);
-@@ -38,6 +38,7 @@
- +	const char *part;
- +	const __be32 *list;
- +	phandle phandle;
-++	char macbuf[20];
- +
- +	list = of_get_property(np, "mtd-mac-address", &size);
- +	if (!list || (size != (2 * sizeof(*list))))
-@@ -58,7 +59,21 @@
- +	if (IS_ERR(mtd))
- +		return PTR_ERR(mtd);
- +
--+	ret = mtd_read(mtd, be32_to_cpup(list), 6, &retlen, (u_char *) mac);
-++	if ((ret = mtd_read(mtd, be32_to_cpup(list), 17, &retlen, (u_char *) macbuf)) == 0) {
-++		u8 __mac[6];
-++		macbuf[17] = '\0';
-++		if (sscanf(macbuf, "%2hhx:%2hhx:%2hhx:%2hhx:%2hhx:%2hhx",
-++			&__mac[0], &__mac[1], &__mac[2], &__mac[3],
-++			&__mac[4], &__mac[5]) == 6) {
-++			memcpy(mac, __mac, 6);
-++		} else {
-++			memcpy(mac, macbuf, 6);
-++		}
-++	} else {
-++		ret = mtd_read(mtd, be32_to_cpup(list), 6, &retlen, (u_char *) mac);
-++	}
-++	((u8 *)mac)[0] &= 0xfe;  /* clear multicast bit */
-++
- +	put_mtd_device(mtd);
- +
- +	return ret;
