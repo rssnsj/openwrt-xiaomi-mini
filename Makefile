@@ -2,9 +2,8 @@
 #
 xiaomi_root = $(shell pwd)
 openwrt_dir = openwrt-ramips
-packages_required = build-essential git flex gettext libncurses5-dev \
-  unzip gawk liblzma-dev u-boot-tools
-openwrt_feeds = libevent2 luci luci-app-samba xl2tpd pptpd pdnsd ntfs-3g
+host_packages = build-essential git flex gettext libncurses5-dev unzip gawk liblzma-dev u-boot-tools
+openwrt_feeds = libevent2 luci luci-app-samba xl2tpd pptpd pdnsd ntfs-3g ethtool
 ### mwan3 luci-app-mwan3
 
 s_build_openwrt: s_install_feeds
@@ -18,7 +17,8 @@ s_build_openwrt: s_install_feeds
 
 s_install_feeds: s_update_feeds
 	@cd $(openwrt_dir); ./scripts/feeds install $(openwrt_feeds);
-	@git clone https://github.com/rssnsj/openwrt-feeds.git $(openwrt_dir)/package/rssnsj-feeds
+	@[ -e $(openwrt_dir)/package/rssnsj-feeds ] || \
+	  git clone https://github.com/rssnsj/openwrt-feeds.git $(openwrt_dir)/package/rssnsj-feeds
 	@touch s_install_feeds
 
 s_update_feeds: s_xiaomi_patch
@@ -39,7 +39,7 @@ s_checkout_svn: s_check_hostdeps
 s_check_hostdeps:
 # 1. Install required host components:
 	@which dpkg >/dev/null 2>&1 || exit 0; \
-	for p in $(packages_required); do \
+	for p in $(host_packages); do \
 		dpkg -s $$p >/dev/null 2>&1 || to_install="$$to_install$$p "; \
 	done; \
 	if [ -n "$$to_install" ]; then \
