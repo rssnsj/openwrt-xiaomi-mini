@@ -6,7 +6,7 @@ Index: target/linux/ramips/image/Makefile
  na930_mtd_size=20971520
  Image/Build/Profile/NA930=$(call BuildFirmware/CustomFlash/$(1),$(1),na930,NA930,$(na930_mtd_size))
  Image/Build/Profile/MZK-750DHP=$(call BuildFirmware/Default8M/$(1),$(1),mzk-750dhp,MZK-750DHP)
-+Image/Build/Profile/Xiaomi-Mini=$(call BuildFirmware/Default16M/$(1),$(1),xiaomi-mini,Xiaomi-Mini)
++Image/Build/Profile/XIAOMI-MIWIFI-MINI=$(call BuildFirmware/Default16M/$(1),$(1),xiaomi-miwifi-mini,XIAOMI-MIWIFI-MINI)
  Image/Build/Profile/Y1=$(call BuildFirmware/Default16M/$(1),$(1),Lenovo-y1,Y1)
  Image/Build/Profile/Y1S=$(call BuildFirmware/Default16M/$(1),$(1),Lenovo-y1s,Y1S)
  
@@ -14,40 +14,37 @@ Index: target/linux/ramips/image/Makefile
  	$(call Image/Build/Profile/WHR1166D,$(1))
  	$(call Image/Build/Profile/MZK-750DHP,$(1))
  	$(call Image/Build/Profile/NA930,$(1))
-+	$(call Image/Build/Profile/Xiaomi-Mini,$(1))
++	$(call Image/Build/Profile/XIAOMI-MIWIFI-MINI,$(1))
  	$(call Image/Build/Profile/Y1,$(1))
  	$(call Image/Build/Profile/Y1S,$(1))
  endef
-Index: target/linux/ramips/dts/Xiaomi-Mini.dts
+Index: target/linux/ramips/dts/XIAOMI-MIWIFI-MINI.dts
 ===================================================================
---- target/linux/ramips/dts/Xiaomi-Mini.dts	(revision 0)
-+++ target/linux/ramips/dts/Xiaomi-Mini.dts	(revision 0)
-@@ -0,0 +1,191 @@
+--- target/linux/ramips/dts/XIAOMI-MIWIFI-MINI.dts	(revision 0)
++++ target/linux/ramips/dts/XIAOMI-MIWIFI-MINI.dts	(revision 0)
+@@ -0,0 +1,150 @@
 +/dts-v1/;
 +
 +/include/ "mt7620a.dtsi"
 +
 +/ {
-+	compatible = "Xiaomi-Mini", "ralink,mt7620a-soc";
-+	model = "Xiaomi Mini";
++	compatible = "XIAOMI MIWIFI MINI", "ralink,mt7620a-soc";
++	model = "Xiaomi MiWiFi Mini";
 +
 +	chosen {
 +		bootargs = "console=ttyS0,115200";
 +	};
 +
 +	palmbus@10000000 {
-+		sysc@0 {
-+			ralink,gpiomux = "i2c", "jtag";
-+			ralink,uartmux = "gpio";
-+			ralink,wdtmux = <1>;
-+		};
 +		gpio0: gpio@600 {
 +			status = "okay";
 +		};
-+		gpio2: gpio@660 {
++
++		gpio1: gpio@638 {
 +			status = "okay";
 +		};
-+		gpio3: gpio@688 {
++
++		gpio2: gpio@660 {
 +			status = "okay";
 +		};
 +
@@ -111,66 +108,59 @@ Index: target/linux/ramips/dts/Xiaomi-Mini.dts
 +		status = "okay";
 +	};
 +
-+	sdhci@10130000 {
-+		status = "okay";
-+	};
-+
-+	pcie@10140000 {
-+		status = "okay";
++	ethernet@10100000 {
++		pinctrl-names = "default";
++		pinctrl-0 = <&ephy_pins>;
++		mtd-mac-address = <&factory 0x4>;
++		ralink,port-map = "llllw";
++		#ralink,port-map = "lllwl";
 +	};
 +
 +	wmac@10180000 {
 +		ralink,mtd-eeprom = <&factory 0>;
 +	};
 +
++	pcie@10140000 {
++		status = "okay";
++
++		pcie-bridge {
++			mt76@0,0 {
++				reg = <0x0000 0 0 0 0>;
++				device_type = "pci";
++				mediatek,mtd-eeprom = <&factory 0x8000>;
++				mediatek,2ghz = <0>;
++			};
++		};
++	};
++
 +	pinctrl {
 +		state_default: pinctrl0 {
 +			gpio {
-+				ralink,group = "uartf", "wled", "nd_sd";
++				ralink,group = "i2c", "rgmii1";
 +				ralink,function = "gpio";
 +			};
-+			pa {
-+				ralink,group = "pa";
-+				ralink,function = "pa";
-+			};
 +		};
 +	};
 +
-+	ethernet@10100000 {
-+		status = "okay";
-+		mtd-mac-address = <&factory 0x4>;
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
++	gpio-leds {
++		compatible = "gpio-leds";
 +
-+		ralink,port-map = "lllwl";
-+
-+		port@4 {
-+			status = "okay";
-+			phy-handle = <&phy4>;
-+			phy-mode = "rgmii";
++		blue {
++			label = "xiaomi:blue:status";
++			gpios = <&gpio1 0 1>;
 +		};
 +
-+		port@5 {
-+			status = "okay";
-+			phy-handle = <&phy5>;
-+			phy-mode = "rgmii";
++		yellow {
++			label = "xiaomi:yellow:status";
++			gpios = <&gpio1 2 1>;
 +		};
 +
-+		mdio-bus {
-+			status = "okay";
-+
-+			phy4: ethernet-phy@4 {
-+				reg = <4>;
-+				phy-mode = "rgmii";
-+			};
-+
-+			phy5: ethernet-phy@5 {
-+				reg = <5>;
-+				phy-mode = "rgmii";
-+			};
++		red {
++			label = "xiaomi:red:status";
++			gpios = <&gpio1 5 1>;
 +		};
 +	};
-+	
++
 +	gpio-keys-polled {
 +		compatible = "gpio-keys-polled";
 +		#address-cells = <1>;
@@ -178,67 +168,36 @@ Index: target/linux/ramips/dts/Xiaomi-Mini.dts
 +		poll-interval = <20>;
 +		reset {
 +			label = "reset";
-+			gpios = <&gpio0 12 1>;
++			gpios = <&gpio1 6 0>;
 +			linux,code = <0x198>;
 +		};
 +	};
-+
-+	gpio-leds {
-+		compatible = "gpio-leds";
-+		system {
-+			label = "xiaomi:green:system";
-+			gpios = <&gpio0 9 1>;
-+		};
-+		internet {
-+			label = "xiaomi:green:internet";
-+			gpios = <&gpio0 11 1>;
-+		};
-+		wlan2p4 {
-+			label = "xiaomi:green:wlan-2p4";
-+			gpios = <&gpio3 0 1>;
-+		};
-+		wlan5p {
-+			label = "xiaomi:green:wlan-5p";
-+			gpios = <&gpio0 7 1>;
-+		};
-+	};
-+
-+	gpio_export {
-+		compatible = "gpio-export";
-+		#size-cells = <0>;
-+		usbpower {
-+			gpio-export,name = "usbpower";
-+			gpio-export,output = <1>;
-+			gpios = <&gpio0 13 0>;
-+		};
-+	};
-+
 +};
-Index: target/linux/ramips/mt7620a/profiles/Xiaomi-Mini.mk
+Index: target/linux/ramips/mt7620a/profiles/xiaomi-miwifi-mini.mk
 ===================================================================
---- target/linux/ramips/mt7620a/profiles/Xiaomi-Mini.mk	(revision 0)
-+++ target/linux/ramips/mt7620a/profiles/Xiaomi-Mini.mk	(revision 0)
+--- target/linux/ramips/mt7620a/profiles/xiaomi-miwifi-mini.mk	(revision 0)
++++ target/linux/ramips/mt7620a/profiles/xiaomi-miwifi-mini.mk	(revision 0)
 @@ -0,0 +1,20 @@
 +#
-+# Copyright (C) 2011 OpenWrt.org
++# Copyright (C) 2015 OpenWrt.org
 +#
 +# This is free software, licensed under the GNU General Public License v2.
 +# See /LICENSE for more information.
 +#
 +
-+define Profile/Xiaomi-Mini
-+ NAME:=Xiaomi Mini
++define Profile/XIAOMI-MIWIFI-MINI
++ NAME:=Xiaomi MiWiFi Mini
 + PACKAGES:=\
-+   kmod-usb-core kmod-usb-dwc2 kmod-usb2 kmod-usb-storage  \
-+   kmod-mmc-spi kmod-sdhci kmod-sdhci-mt7620 \
-+   block-mount mountd kmod-fs-ext4 ppp-mod-pppoe e2fsprogs \
-+   kmod-ledtrig-usbdev fdisk
++	kmod-usb-core kmod-usb-dwc2 kmod-usb2 kmod-usb-ohci \
++	kmod-mt76 \
++	kmod-usb-storage block-mount mountd kmod-fs-ext4 \
++	ppp-mod-pppoe e2fsprogs kmod-ledtrig-usbdev fdisk
 +endef
 +
-+define Profile/Xiaomi-Mini/Description
-+ Default on SD cards and USB storage support.
++define Profile/XIAOMI-MIWIFI-MINI/Description
++ Support for Xiaomi MiWiFi Mini routers
 +endef
-+$(eval $(call Profile,Xiaomi-Mini))
++$(eval $(call Profile,XIAOMI-MIWIFI-MINI))
 Index: target/linux/ramips/base-files/lib/ramips.sh
 ===================================================================
 --- target/linux/ramips/base-files/lib/ramips.sh	(revision 43770)
@@ -247,8 +206,8 @@ Index: target/linux/ramips/base-files/lib/ramips.sh
  	*"ZBT WR8305RT")
  		name="wr8305rt"
  		;;
-+	*"Xiaomi Mini")
-+		name="xiaomi-mini"
++	*"Xiaomi MiWiFi Mini")
++		name="xiaomi-miwifi-mini"
 +		;;
  	*"Lenovo Y1")
  		name="y1"
@@ -261,7 +220,7 @@ Index: target/linux/ramips/base-files/lib/upgrade/platform.sh
  	x5 |\
  	x8 |\
  	zbt-wa05 |\
-+	xiaomi-mini |\
++	xiaomi-miwifi-mini |\
  	y1 |\
  	y1s)
  		[ "$magic" != "27051956" ] && {
@@ -269,14 +228,12 @@ Index: target/linux/ramips/base-files/etc/uci-defaults/01_leds
 ===================================================================
 --- target/linux/ramips/base-files/etc/uci-defaults/01_leds	(revision 43770)
 +++ target/linux/ramips/base-files/etc/uci-defaults/01_leds	(working copy)
-@@ -203,6 +203,11 @@
+@@ -203,6 +203,9 @@
  		set_usb_led "wr8305rt:usb"
  		set_wifi_led "wr8305rt:wifi"
  		;;
-+	xiaomi-mini)
-+		ucidef_set_led_default "system" "system" "xiaomi:green:system" "1"
-+		ucidef_set_led_netdev "internet" "internet" "xiaomi:green:internet" "eth0.2"
-+		set_wifi_led "xiaomi:green:wlan-2p4"
++	xiaomi-miwifi-mini)
++		ucidef_set_led_default "power" "power" "xiaomi:red:status" "1" 
 +		;;
  	y1 |\
  	y1s)
@@ -289,18 +246,10 @@ Index: target/linux/ramips/base-files/etc/uci-defaults/02_network
  		ucidef_add_switch_vlan "switch0" "2" "4 9t"
  		;;
  
-+	xiaomi-mini | \
++	xiaomi-miwifi-mini |\
  	3g-6200n | \
  	dir-610-a1 | \
  	dir-300-b7 | \
-@@ -257,6 +258,7 @@
- 	psr-680w |\
- 	sl-r7205 |\
- 	y1 |\
-+	xiaomi-mini |\
- 	y1s)
- 		lan_mac=$(cat /sys/class/net/eth0/address)
- 		lan_mac=$(macaddr_setbit_la "$lan_mac")
 Index: target/linux/ramips/base-files/etc/diag.sh
 ===================================================================
 --- target/linux/ramips/base-files/etc/diag.sh	(revision 43770)
@@ -309,8 +258,8 @@ Index: target/linux/ramips/base-files/etc/diag.sh
  	na930)
  		status_led="na930:blue:power"
  		;;
-+	xiaomi-mini)
-+		status_led="xiaomi:green:system"
++	xiaomi-miwifi-mini)
++		status_led="xiaomi:red:status"
 +		;;
  	y1 | \
  	y1s)
