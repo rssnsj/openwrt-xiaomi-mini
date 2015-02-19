@@ -12,7 +12,8 @@ s_build_openwrt: s_install_feeds
 			mv -vf .config .config.bak; \
 			echo "WARNING: .config is updated, backed up as '.config.bak'"; \
 		fi; \
-		cp -vf ../config-xiaomi-mini .config
+		cp -vf ../config-xiaomi-mini .config; \
+		[ -f ../.config.extra ] && cat ../.config.extra >> .config || :
 	make -C $(openwrt_dir) V=s -j4
 
 s_install_feeds: s_update_feeds
