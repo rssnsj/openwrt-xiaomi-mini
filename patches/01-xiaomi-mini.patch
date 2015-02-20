@@ -22,7 +22,7 @@ Index: target/linux/ramips/dts/XIAOMI-MIWIFI-MINI.dts
 ===================================================================
 --- target/linux/ramips/dts/XIAOMI-MIWIFI-MINI.dts	(revision 0)
 +++ target/linux/ramips/dts/XIAOMI-MIWIFI-MINI.dts	(revision 0)
-@@ -0,0 +1,150 @@
+@@ -0,0 +1,154 @@
 +/dts-v1/;
 +
 +/include/ "mt7620a.dtsi"
@@ -138,6 +138,10 @@ Index: target/linux/ramips/dts/XIAOMI-MIWIFI-MINI.dts
 +			gpio {
 +				ralink,group = "i2c", "rgmii1";
 +				ralink,function = "gpio";
++			};
++			pa {
++				ralink,group = "pa";
++				ralink,function = "pa";
 +			};
 +		};
 +	};
