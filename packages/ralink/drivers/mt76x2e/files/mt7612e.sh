@@ -25,9 +25,11 @@ detect_mt7612e() {
 	[ -d $module ] || return
 	uci get wireless.mt7612e >/dev/null 2>&1 && return
 	ifconfig rai0 >/dev/null 2>&1 || return
+	# NOTICE: Set type 'mac80211' for cheating LuCI
+	# to list all configuration capabilities.
 	cat <<EOF
 config wifi-device mt7612e
-	option type mt7612e
+	option type mac80211
 	option vendor ralink
 	option band 5G
 	option channel 0
