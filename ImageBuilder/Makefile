@@ -28,7 +28,7 @@ endif
 rom: .check_ib $(BUILDER)/.patched
 	mkdir -p $(BUILDER)/dl
 	cat $(OPKG_REPOS) > $(BUILDER)/repositories.conf
-	make -C $(BUILDER) image PROFILE=HiWiFi-HC5761 \
+	make -C $(BUILDER) image PROFILE=XIAOMI-MIWIFI-MINI \
 		FILES="$(shell cd $(BUILDER); pwd)/target/linux/ramips/base-files" \
 		PACKAGES="$(OPKG_PACKAGES)"
 
@@ -36,14 +36,14 @@ rom5g: .check_ib .ralink_built $(BUILDER)/.patched
 	mkdir -p $(BUILDER)/dl
 	cat $(OPKG_REPOS) > $(BUILDER)/repositories.conf
 	echo "src ralink file:$(shell cd $(SDK)/bin/ramips/packages; pwd)" >> $(BUILDER)/repositories.conf
-	make -C $(BUILDER) image PROFILE=HiWiFi-HC5761 \
+	make -C $(BUILDER) image PROFILE=XIAOMI-MIWIFI-MINI \
 		FILES="$(shell cd $(BUILDER); pwd)/target/linux/ramips/base-files" \
-		PACKAGES="$(OPKG_PACKAGES) 8021xd uci2dat kmod-mt7610e"
+		PACKAGES="$(OPKG_PACKAGES) 8021xd uci2dat kmod-mt76x2e"
 
 ralink .ralink_built: .check_sdk
 	@cd $(SDK); [ -d package/ralink ] || ln -sv $(shell pwd)/../packages/ralink package/ralink
 	@cd $(SDK); [ ! -L dl -a -d /var/dl ] && { rmdir dl && ln -s /var/dl; } || :
-	make package/mt7610e/compile V=s -C "$(SDK)"
+	make package/mt76x2e/compile V=s -C "$(SDK)"
 	make package/8021xd/compile V=s -C "$(SDK)"
 	make package/uci2dat/compile V=s -C "$(SDK)"
 	cd "$(SDK)/bin/ramips/packages" && ../../../scripts/ipkg-make-index.sh . > Packages && gzip -9c Packages > Packages.gz
@@ -51,7 +51,7 @@ ralink .ralink_built: .check_sdk
 
 $(BUILDER)/.patched patch:
 	mkdir -p $(BUILDER)/target/linux/ramips/patches-3.10
-	cat ../patches/01-hiwifi-hc5761.patch ../patches/12-disable-pdnsd.patch | patch -d $(BUILDER) -p0
+	cat ../patches/01-xiaomi-mini.patch ../patches/12-disable-pdnsd.patch | patch -d $(BUILDER) -p0
 	touch $(BUILDER)/.patched
 
 .check_ib:
@@ -69,8 +69,8 @@ $(BUILDER)/.patched patch:
 
 help:
 	@echo "Usage:"
-	@echo " make BUILDER=<ImageBuilder> [FULL=1]             build HC5761 firmware"
-	@echo " make rom5g BUILDER=<ImageBuilder> [FULL=1]       build HC5761 firmware with 5G Wi-Fi driver"
+	@echo " make BUILDER=<ImageBuilder> [FULL=1]             build MiWiFi Mini firmware"
+	@echo " make rom5g BUILDER=<ImageBuilder> [FULL=1]       build MiWiFi Mini firmware with 5G Wi-Fi driver"
 	@echo "Options:"
 	@echo " Use \"BUILDER=<ImageBuilder>\" to specify a valid ImageBuilder directory."
 	@echo " Use \"SDK=<ImageBuilder>\" to specify a valid OpenWrt SDK directory."
@@ -80,7 +80,7 @@ clean: .check_ib
 	make clean -C $(BUILDER)
 	@if [ -e $(BUILDER)/.patched ]; then \
 		rm -vf $(BUILDER)/.patched; \
-		cat ../patches/01-hiwifi-hc5761.patch ../patches/12-disable-pdnsd.patch | patch -R -d $(BUILDER) -p0; \
+		cat ../patches/01-xiaomi-mini.patch ../patches/12-disable-pdnsd.patch | patch -R -d $(BUILDER) -p0; \
 	fi
 	rm -f .ralink_built
 
