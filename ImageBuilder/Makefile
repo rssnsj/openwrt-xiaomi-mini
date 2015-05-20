@@ -45,7 +45,7 @@ define BeforeBuildImage
 	cp -f opkg.conf $(BUILDER)/target/linux/ramips/base-files/etc/opkg.conf
 endef
 
-Xiaomi-mini: $(PREPARED_TARGETS)
+Xiaomi-Mini: $(PREPARED_TARGETS)
 	$(call BeforeBuildImage)
 	make -C $(BUILDER) image PROFILE=XIAOMI-MIWIFI-MINI \
 		FILES="$(shell cd $(BUILDER); pwd)/target/linux/ramips/base-files" \
@@ -67,7 +67,7 @@ Xiaomi-mini: $(PREPARED_TARGETS)
 
 .feeds:
 	@cd $(SDK); [ ! -L dl -a -d /var/dl ] && { rmdir dl && ln -s /var/dl; } || :
-	@cd $(SDK)/package; [ -d network-feeds ] && { cd network-feeds; git pull; } || git clone https://github.com/rssnsj/network-feeds
+	@cd $(SDK)/package; [ -d network-feeds ] && { cd network-feeds; git pull; } || git clone https://github.com/rssnsj/network-feeds.git
 	make package/ipset-lists/compile V=s -C "$(SDK)"
 	make package/shadowsocks-libev/compile V=s -C "$(SDK)"
 	make package/shadowsocks-tools/compile V=s -C "$(SDK)"
@@ -90,8 +90,8 @@ Xiaomi-mini: $(PREPARED_TARGETS)
 
 # Try extracting ImageBuilder & SDK to current directory
 extract:
-	tar jxvf /var/dl/OpenWrt-ImageBuilder-ramips_mt7620a-for-linux-x86_64.tar.bz2
-	tar jxvf /var/dl/OpenWrt-SDK-ramips-for-linux-x86_64-gcc-4.8-linaro_uClibc-0.9.33.2.tar.bz2
+	tar jxvf /var/dl/$(BUILDER).tar.bz2
+	tar jxvf /var/dl/$(SDK).tar.bz2
 
 help:
 	@echo "Usage:"
