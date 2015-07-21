@@ -28,10 +28,11 @@ PREPARED_TARGETS = .check_ib .patched
 ifeq ($(FULL),1)
 	RALINK := 1
 	FEEDS := 1
+	WIFI := 1
 endif
 # Check each option for selection of packages and dependencies
 ifeq ($(RALINK),1)
-	OPKG_PACKAGES_XIAOMI_MINI += 8021xd uci2dat kmod-mt76x2e
+	OPKG_PACKAGES_XIAOMI_MINI += 8021xd uci2dat kmod-mt76x2e luci-mtk-wifi
 	PREPARED_TARGETS += .check_sdk .ralink
 endif
 ifeq ($(FEEDS),1)
@@ -49,11 +50,17 @@ define BeforeBuildImage
 	cp -f opkg.conf $(BUILDER)/target/linux/ramips/base-files/etc/opkg.conf
 endef
 
+define EnableWireless
+	@[ -n "$(WIFI)" ] || exit 0; \
+		F="$(1)"; openwrt-repack.sh $$F -w -o $$F.out && mv $$F.out $$F
+endef
+
 Xiaomi-Mini: $(PREPARED_TARGETS)
 	$(call BeforeBuildImage)
 	make -C $(BUILDER) image PROFILE=XIAOMI-MIWIFI-MINI \
 		FILES="$(shell cd $(BUILDER); pwd)/target/linux/ramips/base-files" \
 		PACKAGES="$(OPKG_PACKAGES) $(OPKG_PACKAGES_XIAOMI_MINI)"
+	$(call EnableWireless,$(shell echo $(BUILDER)/bin/ramips/openwrt-ramips-*-xiaomi-*-sysupgrade.bin))
 
 .patched:
 	mkdir -p $(BUILDER)/target/linux/ramips/patches-3.10
@@ -67,6 +74,7 @@ Xiaomi-Mini: $(PREPARED_TARGETS)
 	make package/8021xd/compile V=s -C "$(SDK)"
 	make package/uci2dat/compile V=s -C "$(SDK)"
 	make package/mt76x2e/compile V=s -C "$(SDK)"
+	make package/luci-mtk-wifi/compile V=s -C "$(SDK)"
 	cd "$(SDK)/bin/ramips/packages" && ../../../scripts/ipkg-make-index.sh . > Packages && gzip -9c Packages > Packages.gz
 
 .feeds:
@@ -96,8 +104,8 @@ Xiaomi-Mini: $(PREPARED_TARGETS)
 
 # Try extracting ImageBuilder & SDK to current directory
 extract:
-	tar jxvf /var/dl/$(BUILDER).tar.bz2
-	tar jxvf /var/dl/$(SDK).tar.bz2
+	[ -d "$(BUILDER)" ] || tar jxvf /var/dl/$(BUILDER).tar.bz2
+	[ -d "$(SDK)" ] || tar jxvf /var/dl/$(SDK).tar.bz2
 
 help:
 	@echo "Usage:"
