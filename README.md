@@ -3,6 +3,8 @@ openwrt-xiaomi-mini
 
 OpenWrt Patch for Xiaomi Router Mini
 
+-------
+
 #### OpenWrt补丁及ImageBuilder说明
 * 包含了小米路由mini机型的OpenWrt补丁；
 * 可以Checkout下来代码直接make，会自动打补丁、自动载入menuconfig配置，并自动编译；
